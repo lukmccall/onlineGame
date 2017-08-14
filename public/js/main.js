@@ -4,7 +4,7 @@
 (function () {
     const canvas = document.querySelector('canvas'),
         c = canvas.getContext("2d");
-    let socket = io.connect('http://localhost:3000/');
+    let socket = io();
     let movment = {x: 0, y:0};
     let canShoot = true;
     let shootTimer;
