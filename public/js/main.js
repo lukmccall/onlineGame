@@ -33,21 +33,8 @@
     }
 
     Player.prototype.update = function () {
-        if(socket.id === this.socketId) {
-            if(this.x + (this.speed * movment.x) + this.radius > canvas.width)
-                this.x = canvas.width - this.radius;
-            else if(this.x + (this.speed * movment.x) - this.radius < 0) {
-                this.x = this.radius;
-            }
-            else
-                this.x += this.speed * movment.x;
-
-            if(this.y + (this.speed * movment.y) +this.radius > canvas.height)
-                this.y = canvas.height - this.radius;
-            else if(this.y + (this.speed * movment.y) - this.radius < 0)
-                this.y = this.radius;
-            else
-                this.y += this.speed * movment.y;
+        if(this.socketId === socket.id) {
+            socket.emit("move", {id: this.socketId, movment: movment});
         }
         this.draw();
     };
@@ -121,22 +108,26 @@
         players.push(new Player(data.id,data.x,data.y));
     });
     socket.on("update all", function (data) {
+
         let mustAddOne = true;
-        for(let i = 0; i<players.length; i++){
-            if(players[i].socketId === data.id){
-                players[i].x = data.x;
-                players[i].y = data.y;
-                mustAddOne = false;
-                break;
+        for(let i = 0; i<data.length; i++){
+            mustAddOne = true;
+            for(let j =0; j<players.length; j++) {
+                if (players[j].socketId === data[i].id) {
+                    players[j].x = data[i].x;
+                    players[j].y = data[i].y;
+                    mustAddOne = false;
+                    break;
+                }
             }
+            if(mustAddOne)
+                players.push(new Player(data[i].id,data[i].x,data[i].y));
         }
-        if(mustAddOne)
-            players.push(new Player(data.id,data.x,data.y));
+
     });
     socket.on("delete player", (data)=>{
         for(let i = 0; i<players.length;i++)
             if(players[i].socketId === data.id) {
-                console.log("kasowane");
                 players.splice(i, 1);
             }
     });
@@ -152,8 +143,6 @@
         c.fillRect(0,0,canvas.width,canvas.height);
         for(let i = 0; i<players.length; i++) {
             players[i].update();
-            if(players[i].socketId === socket.id)
-                socket.emit('update', {id: socket.id, x:players[i].x, y:players[i].y});
         }
         for(let i = 0; i<bullets.length;i++){
             bulletDraw(bullets[i].x,bullets[i].y,5);

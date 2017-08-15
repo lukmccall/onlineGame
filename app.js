@@ -26,15 +26,6 @@ io.on('connection', (socket)=>{
     players.push({id: socket.id, x:x,y:y, health:5});
     io.sockets.emit('set up', {id: socket.id,x: x, y: y});
 
-    socket.on('update', (data)=>{
-        for(let i = 0;i<players.length; i++)
-        {
-            if(players[i].id === data.id)
-                players[i] = {id: data.id, x:data.x, y:data.y, health: players[i].health};
-        }
-        io.sockets.emit('update all', {id: data.id, x:data.x, y:data.y});
-    });
-
     socket.on('disconnect', ()=>{
         for(let i = 0;i<players.length; i++)
         {
@@ -46,6 +37,29 @@ io.on('connection', (socket)=>{
 
     socket.on("new bullet", (data)=>{
         bullets.push(data);
+    });
+
+    socket.on("move", (data)=>{
+        let movment = data.movment;
+        let speed = 2;
+        for(let i=0; i<players.length;i++) {
+            if(players[i].id === data.id) {
+                if (players[i].x + (speed * movment.x) + 10 > 600)
+                    players[i].x =  600 - 10;
+                else if (players[i].x + (speed * movment.x) - 10 < 0)
+                    players[i].x = 10;
+                else
+                    players[i].x += speed * movment.x;
+
+                if (players[i].y + (speed * movment.y) + 10 > 600)
+                    players[i].y = 600 - 10;
+                else if (players[i].y + (speed * movment.y) - 10 < 0)
+                    players[i].y = 10;
+                else
+                    players[i].y += speed * movment.y;
+                break;
+            }
+        }
     });
 });
 
@@ -88,10 +102,16 @@ setInterval(()=>{
                 send.push({x: bullets[i].x, y: bullets[i].y});
         }
     }
+    let send2 = [];
+    for(let i = 0; i<players.length; i++){
+        send2.push({id: players[i].id, x:players[i].x, y:players[i].y});
+    }
+
+    io.sockets.emit('update all', send2);
     io.sockets.emit('update bullets', send);
 }, 1000/60);
 
 
-http.listen(process.env.PORT || 5000, function () {
-    console.log("Listening on",process.env.PORT );
+http.listen(process.env.PORT || 3000, function () {
+    console.log("Listening on " + (process.env.PORT || 3000));
 });
